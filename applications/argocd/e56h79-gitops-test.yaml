@@ -1,0 +1,21 @@
+project: e56h79
+kind: Application
+metadata:
+  name: e56h79-app-gitops-test
+spec:
+  destination:
+    name: ''
+    namespace: e56h79-test
+    server: 'https://kubernetes.default.svc'
+  source:
+    path: charts/gitops
+    repoURL: 'git@github.com:bcgov-c/tenant-gitops-e56h79.git'
+    targetRevision: test
+    helm:
+      valueFiles:
+        - $values/deploy/test_values.yaml
+  project: e56h79
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

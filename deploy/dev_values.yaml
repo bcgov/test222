@@ -1,0 +1,330 @@
+# Base ngnix web server
+
+nginx:
+  enabled: false
+  chart: "bitnami/nginx"
+  service:
+    type: ClusterIP
+  podSecurityContext:
+    enabled: false
+  containerSecurityContext:
+    enabled: false
+  networkPolicy:
+    enabled: false
+  ingress:
+    enabled: true
+    annotations:
+      aviinfrasetting.ako.vmware.com/name: "dataclass-medium"
+    hostname: nginx-e56h79-dev.apps.emerald.devops.gov.bc.ca
+  version: "15.11.0"
+  commonAnnotations:
+    datree.skip/CUSTOM_WORKLOAD_INCORRECT_NETWORK_POLICIES: irrelevant for deployments, skipping.
+  image:
+    pullPolicy: Always
+  podLabels:
+    environment: dev
+    env: development
+    owner: "e56h79-team"
+    project: "e56h79-project"
+    DataClass: "Medium"
+  commonLabels:
+    environment: dev
+    env: development
+    owner: "e56h79-team"
+    project: "e56h79-project"
+    DataClass: "Medium"
+    app.kubernetes.io/part-of: "e56h79-project"
+  replicaCount: 1
+  resources:
+    limits:
+      cpu: 50m
+      memory: 256Mi
+    requests:
+      memory: 100Mi
+      cpu: 20m
+
+# Normal Postgres DB instance
+postgresql:
+  enabled: false
+  image:
+    pullPolicy: Always
+  commonLabels:
+    environment: dev
+    env: development
+    owner: "e56h79-team"
+    project: "e56h79-project"
+    DataClass: "Medium"
+  primary:
+    podSecurityContext:
+      enabled: false
+    containerSecurityContext:
+      enabled: false
+    networkPolicy:
+      enabled: false
+    labels:
+      environment: dev
+      env: development
+      owner: "e56h79-team"
+      project: "e56h79-project"
+      DataClass: "Medium"
+    podLabels:
+      environment: dev
+      env: development
+      owner: "e56h79-team"
+      project: "e56h79-project"
+      DataClass: "Medium"
+    resources:
+      limits:
+        cpu: 200m
+        memory: 1Gi
+      requests:
+        memory: 256Mi
+        cpu: 100m
+
+#  this will create postgres database with HA and 3 nodes. set to 3 in prod
+postgresql-ha:
+  enabled: true
+  backup:
+    enabled: true
+    image:
+      pullPolicy: Always
+    cronjob:
+      containerSecurityContext:
+        enabled: false
+      labels:
+        job: postgres-job
+      podSecurityContext:
+        enabled: false
+      schedule: "*/5 * * * *"
+      resources:
+        limits:
+          cpu: 10m
+          memory: 256Mi
+        requests:
+          memory: 100Mi
+          cpu: 2m
+      storage:
+        accessModes: ["ReadWriteMany"]
+        size: 256Mi
+
+  postgresql:
+    image:
+      pullPolicy: Always
+    debug: true
+    password: hb0i97olKO
+    initdbScripts:
+      my_init_script.sh: |
+        #!/bin/sh
+        echo "Do something."
+      00_init_extensions.sh: |
+        echo "Hi, I'm a testing script added by @stanley"
+      01_init_table.sql: |
+
+        CREATE TABLE IF NOT EXISTS  public."type_agency" (
+            partId INT,
+            paasSequence INT,
+            paasAdministratorYN BOOLEAN,
+            roles TEXT[], 
+            agencyAssignmentId SERIAL PRIMARY KEY,
+            FOREIGN KEY (agencyAssignmentId) REFERENCES agencyAssignment(id)
+        );
+
+        -- Insert data into the agencyAssignment table   
+
+        CREATE TABLE IF NOT EXISTS  public.agencyAssignment (
+            id SERIAL PRIMARY KEY,
+            agencyId INT,
+            identifierCode VARCHAR(255),
+            agencyName VARCHAR(255)
+        );
+
+        -- Insert data into the agencyAssignment table   
+        CREATE TABLE IF NOT EXISTS  public.type_application (
+            code VARCHAR(255) PRIMARY KEY,
+            description VARCHAR(255),
+            name VARCHAR(255),
+            birthDate DATE,
+            email VARCHAR(255)
+        );   
+
+
+        CREATE TABLE IF NOT EXISTS  public."type_agency" (
+            partId INT,
+            paasSequence INT,
+            paasAdministratorYN BOOLEAN,
+            roles TEXT[], 
+            agencyAssignmentId SERIAL PRIMARY KEY,
+            FOREIGN KEY (agencyAssignmentId) REFERENCES agencyAssignment(id)
+        );
+
+        -- Insert data into the agencyAssignment table   
+
+        CREATE TABLE IF NOT EXISTS  public.agencyAssignment (
+            id SERIAL PRIMARY KEY,
+            agencyId INT,
+            identifierCode VARCHAR(255),
+            agencyName VARCHAR(255)
+        );
+          
+        -- Insert data into the agencyAssignment table   
+        INSERT INTO public.agencyAssignment (agencyId, identifierCode, agencyName)
+        VALUES 
+            (1, 'SPD', 'Sannich Police Department'),
+            (2, 'VICPD', 'Victoria Police Department'),
+            (3, 'DPD', 'Delta Police Department'),
+            (4, 'VPD', 'Vancouver Police Department'),
+            (5, 'RCMP', 'Royal Canada Mounted Police'),
+            (6, 'OPP', 'Ontario Provincial Police'),
+            (7, 'MPD', 'Montreal Police Department'),
+            (8, 'NYPD', 'New York City Police Department'),
+            (9, 'LAPD', 'Los Angeles Police Department'),
+            (10, 'MP', 'Metropolitan Police');
+
+        -- Insert data into the type_agency table
+        INSERT INTO public."type_agency" (partId, paasSequence, paasAdministratorYN, roles, agencyAssignmentId)
+        VALUES 
+            (1, 123, TRUE, ARRAY['Admin', 'User'], 1),
+            (2, 456, FALSE, ARRAY['User'], 2),
+            (3, 789, TRUE, ARRAY['Admin', 'Manager'], 3),
+            (4, 987, TRUE, ARRAY['User'], 4),
+            (5, 654, FALSE, ARRAY['Manager'], 5),
+            (6, 123, TRUE, ARRAY['Admin', 'User'], 6),
+            (7, 456, FALSE, ARRAY['User'], 7),
+            (8, 789, TRUE, ARRAY['Admin', 'Manager'], 8),
+            (9, 987, TRUE, ARRAY['User'], 9),
+            (10, 654, FALSE, ARRAY['Manager'], 10);
+          
+
+        -- Insert data into the type_application table
+        INSERT INTO public.type_application (code, description, name, birthDate, email)
+        VALUES 
+            ('APP001', 'Loan application for a new car purchase', 'Car Loan Application', '1989-03-15', 'john.doe@example.com'),
+            ('APP002', 'Mortgage application for a first-time home buyer', 'First-Time Home Buyer Mortgage', '1985-07-21', 'jane.smith@example.com'),
+            ('APP003', 'Credit card application for a student', 'Student Credit Card', '1998-02-10', 'alice.johnson@example.com'),
+            ('APP004', 'Personal loan application for debt consolidation', 'Debt Consolidation Loan', '1978-11-04', 'bob.brown@example.com'),
+            ('APP005', 'Business loan application for a startup venture', 'Startup Business Loan', '1995-09-30', 'emily.davis@example.com');
+
+
+        -- Create Author table
+         CREATE TABLE IF NOT EXISTS public.Author (
+            AuthorID SERIAL PRIMARY KEY,
+            Name VARCHAR(100),
+            BirthDate DATE,
+            Country VARCHAR(100),
+            Email VARCHAR(100) -- Added Email column
+        );
+
+        -- Insert sample data into Author table
+        INSERT INTO public.Author (Name, BirthDate, Country, Email) VALUES
+        ('Stanley Okeke', '1775-12-16', 'Canada', 'stanley.okeke@gov.bc.ca'),
+        ('Charles Dickens', '1812-02-07', 'United Kingdom', 'charles@example.com'),
+        ('Leo Tolstoy', '1828-09-09', 'Russia', 'leo@example.com'),
+        ('Mark Twain', '1835-11-30', 'United States', 'mark@example.com'),
+        ('Emily Dickinson', '1830-12-10', 'United States', 'emily@example.com');
+    replicaCount: 2
+    networkPolicy:
+      extraIngress:
+        - from:
+            - podSelector:
+                matchLabels:
+                  job: postgres-job
+        - from:
+            - podSelector:
+                matchLabels:
+                  app.kubernetes.io/name: webapi-core
+    podSecurityContext:
+      enabled: false
+    persistence:
+      size: 256Mi
+    containerSecurityContext:
+      enabled: false
+    resources:
+      limits:
+        cpu: 50m
+        memory: 256Mi
+      requests:
+        memory: 100Mi
+        cpu: 20m
+
+  pgdumpall:
+    podSecurityContext:
+      enabled: false
+    persistence:
+      size: 256Mi
+    containerSecurityContext:
+      enabled: false
+    resources:
+      limits:
+        cpu: 50m
+        memory: 256Mi
+      requests:
+        memory: 100Mi
+        cpu: 20m
+
+  pgpool:
+    containerSecurityContext:
+      enabled: false
+    image:
+      pullPolicy: Always
+
+  commonLabels:
+    environment: dev
+    env: development
+    owner: "test-team"
+    project: "abcd"
+    DataClass: "Medium"
+    app.kubernetes.io/part-of: "e56h79-project"
+
+telnet:
+  enabled: true
+  goldService: "sso-e27db1-dev.apps.gold.devops.gov.bc.ca" # tetsing connectivity from emerald to a service GOLD using telnet
+  goldPort: 80
+  diamSSO: dev.common-sso.justice.gov.bc.ca # testing outbound to DIAM Common-SSO
+  diamEgressIP: 142.34.102.72/32
+  diamPort: 80
+  justinEgressIP: 142.34.47.201/32 # JUSTIN DEV IP
+  publicService: "https://docker.io" # testing connectivity from emerald to internet via web proxy using curl
+  gitHubUrl: "https://github.com/bcgov/JAG-GITOPS-TEMPLATE.git" # test connectivity outbound to github via git clone
+  commonLabels:
+    environment: dev
+    env: development
+    owner: "e56h79-team"
+    project: "e56h79-project"
+    DataClass: "Medium"
+    app.kubernetes.io/part-of: "e56h79-project"
+
+react-baseapp:
+  enabled: true
+  environment: dev
+  env: development
+  owner: "e56h79-team"
+  project: "e56h79-project"
+  part: "e56h79-project"
+  keycloak:
+    authUrl: https://sso-e27db1-dev.apps.gold.devops.gov.bc.ca/auth
+    realm: ISB
+    clientId: react-baseapp
+  apiUrl: "e56h79-app-webapi-core:8080"
+  podLabels:
+    DataClass: "Medium"
+  route:
+    host: react-baseapp-e56h79-dev.apps.gold.devops.gov.bc.ca
+    annotations:
+      aviinfrasetting.ako.vmware.com/name: "dataclass-medium"
+
+webapi-core:
+  enabled: true
+  environment: dev
+  app_name: "e56h79-app"
+  env: development
+  owner: "e56h79-team"
+  project: "e56h79-project"
+  part: "e56h79-project"
+  keycloak:
+    realmUrl: https://sso-e27db1-dev.apps.gold.devops.gov.bc.ca/auth/realms/ISB
+    adminClientId: WEB-API
+    ClientId: WEB-API
+  database:
+    connectionString: "Host=gitops-postgresql-ha-postgresql;Port=5432;Database=postgres;Username=postgres;Password=hb0i97olKO"
+  podLabels:
+    DataClass: "Medium"

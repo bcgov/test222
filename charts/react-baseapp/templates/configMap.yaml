@@ -1,0 +1,37 @@
+{{- if .Values.configMap.create -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "react-baseapp.configMap" . }}
+  labels:
+    {{- include "react-baseapp.labels" . | nindent 4 }}
+  {{- with .Values.configMap.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}   
+data:
+  .env.production: |
+    PORT=3000
+
+    NEXTAUTH_URL=https://{{ .Values.route.host }}
+
+    NEXTAUTH_SECRET=supersecret
+
+    NEXT_PUBLIC_SITE_URL=https://{{ .Values.route.host }}
+
+    API_ENDPOINT=http://{{ .Release.Name }}-webapi-core.e56h79-{{ .Values.environment }}.svc.cluster.local:8080
+
+    LEA_API_ENDPOINT=http://{{ .Release.Name }}-webapi-core:8080
+
+    KEYCLOAK_URL=https://sso-e27db1-dev.apps.gold.devops.gov.bc.ca/auth/realms/ 
+
+    KEYCLOAK_REALM=ISB
+
+    KEYCLOAK_CLIENT_ID=react-baseapp
+
+    KC_IDP_HINT=idir
+
+    KEEP_ALIVE_TIME=120000
+
+{{- end }}
+

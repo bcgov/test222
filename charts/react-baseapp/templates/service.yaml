@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "react-baseapp.fullname" . }}
+  labels:
+    {{- include "react-baseapp.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port.nginx }}
+      targetPort: {{ .Values.service.port.nginx }}
+      protocol: TCP
+      name: nginxport
+    - port: {{ .Values.service.port.next }}
+      targetPort: {{ .Values.service.port.next }}
+      protocol: TCP
+      name: nextport
+  selector:
+    {{- include "react-baseapp.selectorLabels" . | nindent 4 }}
