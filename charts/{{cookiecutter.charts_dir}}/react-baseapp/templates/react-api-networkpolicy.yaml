@@ -1,0 +1,21 @@
+
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: {{ "{{" }} include "chart.fullname" . {{ "}}" }}-api-egress
+  labels:
+    {{ "{{" }}- include "react-baseapp.labels" . | nindent 4 {{ "}}" }}
+  annotations: 
+    datree.skip/CUSTOM_WORKLOAD_INCORRECT_NETWORK_POLICIES: skipping this policy
+    datree.skip/CUSTOM_WORKLOAD_INVALID_LABELS_VALUE: skipping this policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: react-baseapp
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: webapi-core
+  policyTypes:
+    - Egress
